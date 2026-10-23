@@ -1,0 +1,153 @@
+/* El Rafómetro - Estilo Retro Gamer Minimalista (Light Theme) */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&family=Montserrat:wght@400;600;700;800;900&display=swap');
+
+:root {
+    --bg-light: #f8fafc;
+    --card-bg: #ffffff;
+    --pixel-black: #0f172a;
+    --rafa-yellow: #facc15;
+    --rafa-yellow-dark: #eab308;
+    --retro-red: #ef4444;
+    --retro-green: #22c55e;
+    --retro-blue: #3b82f6;
+    --retro-purple: #8b5cf6;
+    --retro-kick: #53fc18;
+}
+
+body {
+    font-family: 'Space Grotesk', 'Montserrat', sans-serif;
+    background-color: var(--bg-light);
+    color: var(--pixel-black);
+    background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+    background-size: 20px 20px;
+    overflow-x: hidden;
+}
+
+/* Tipografía Retro Gamer */
+.font-pixel {
+    font-family: 'Press Start 2P', cursive;
+}
+
+/* Cajas y Botones Retro Arcade (Neo-brutalist / 8-Bit Minimalist) */
+.retro-box {
+    background: #ffffff;
+    border: 3px solid var(--pixel-black);
+    box-shadow: 4px 4px 0px var(--pixel-black);
+    border-radius: 12px;
+}
+
+.retro-box-sm {
+    background: #ffffff;
+    border: 2px solid var(--pixel-black);
+    box-shadow: 3px 3px 0px var(--pixel-black);
+    border-radius: 8px;
+}
+
+.retro-btn {
+    border: 3px solid var(--pixel-black);
+    box-shadow: 4px 4px 0px var(--pixel-black);
+    transition: all 0.1s ease-in-out;
+    cursor: pointer;
+}
+
+.retro-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0px var(--pixel-black);
+}
+
+.retro-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0px var(--pixel-black);
+}
+
+.retro-btn-yellow {
+    background-color: var(--rafa-yellow);
+    color: var(--pixel-black);
+}
+
+.retro-btn-yellow:hover {
+    background-color: #fde047;
+}
+
+/* Barra Scouter animada en fondo claro */
+.scouter-retro-screen {
+    position: relative;
+    background: #f1f5f9;
+    border: 3px solid var(--pixel-black);
+    box-shadow: 4px 4px 0px var(--pixel-black);
+    overflow: hidden;
+}
+
+.scouter-scanline-light {
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #eab308, transparent);
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 5;
+    opacity: 0.8;
+    animation: scanAnimLight 2s linear infinite;
+}
+
+@keyframes scanAnimLight {
+    0% { top: 0%; opacity: 0.3; }
+    50% { opacity: 1; }
+    100% { top: 100%; opacity: 0.3; }
+}
+
+/* Animación Flotante */
+@keyframes floatRetro {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+}
+
+.animate-float {
+    animation: floatRetro 3s ease-in-out infinite;
+}
+
+/* Efecto Ladrido Corchito */
+@keyframes barkPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15) rotate(-3deg); }
+    100% { transform: scale(1); }
+}
+
+.bark-active {
+    animation: barkPulse 0.4s ease-in-out;
+}
+
+/* Tabs en modo retro activo */
+.tab-btn.active {
+    background-color: var(--rafa-yellow) !important;
+    color: var(--pixel-black) !important;
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0px var(--pixel-black) !important;
+}
+
+/* Canvas del juego en estilo retro */
+#gameCanvas {
+    background: #f8fafc;
+    border: 3px solid var(--pixel-black);
+    box-shadow: 4px 4px 0px var(--pixel-black);
+    cursor: crosshair;
+}
+
+/* Badge retro */
+.retro-pill {
+    border: 2px solid var(--pixel-black);
+    box-shadow: 2px 2px 0px var(--pixel-black);
+}
+
+/* Scrollbar Minimalista */
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--rafa-yellow);
+    border: 2px solid var(--pixel-black);
+    border-radius: 4px;
+}
