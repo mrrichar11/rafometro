@@ -29,6 +29,7 @@ class RayoAntirafadorGame {
         this.saveScoreForm = document.getElementById('saveScoreForm');
         this.leaderboardList = document.getElementById('leaderboardList');
         this.resetRankingBtn = document.getElementById('resetRankingBtn');
+        this.rankingStatusBadge = document.getElementById('rankingStatusBadge');
 
         this.isPlaying = false;
         this.score = 0;
@@ -139,7 +140,8 @@ class RayoAntirafadorGame {
         ];
     }
 
-    loadLeaderboard() {
+    async loadLeaderboard() {
+        // Cargar primero de memoria local / valores por defecto para que sea instantáneo
         const saved = localStorage.getItem('rafometro_leaderboard');
         if (saved) {
             try {
@@ -149,7 +151,43 @@ class RayoAntirafadorGame {
             }
         } else {
             this.leaderboard = this.getDefaultLeaderboard();
-            localStorage.setItem('rafometro_leaderboard', JSON.stringify(this.leaderboard));
+        }
+        this.renderLeaderboard();
+
+        // Consultar API en la nube (/api/leaderboard)
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+            const res = await fetch('/api/leaderboard', {
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data && Array.isArray(data.leaderboard)) {
+                    this.leaderboard = data.leaderboard;
+                    localStorage.setItem('rafometro_leaderboard', JSON.stringify(this.leaderboard));
+                    this.renderLeaderboard();
+
+                    if (this.rankingStatusBadge) {
+                        if (data.isLive) {
+                            this.rankingStatusBadge.className = "font-pixel text-[8px] bg-emerald-100 text-emerald-800 border border-emerald-600 px-2 py-0.5 rounded shadow-sm";
+                            this.rankingStatusBadge.textContent = "🌐 CLASIFICACIÓN GLOBAL";
+                        } else {
+                            this.rankingStatusBadge.className = "font-pixel text-[8px] bg-amber-100 text-amber-900 border border-amber-600 px-2 py-0.5 rounded shadow-sm";
+                            this.rankingStatusBadge.textContent = "💾 MODO LOCAL";
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            // Si está corriendo offline / local sin backend
+            if (this.rankingStatusBadge) {
+                this.rankingStatusBadge.className = "font-pixel text-[8px] bg-slate-100 text-slate-700 border border-slate-400 px-2 py-0.5 rounded shadow-sm";
+                this.rankingStatusBadge.textContent = "💾 LOCAL";
+            }
         }
     }
 
@@ -195,7 +233,7 @@ class RayoAntirafadorGame {
         });
     }
 
-    handleSavePlayerScore() {
+    async handleSavePlayerScore() {
         if (this.scoreAlreadySaved) return;
 
         let name = (this.playerNameInput ? this.playerNameInput.value : '').trim();
@@ -205,22 +243,50 @@ class RayoAntirafadorGame {
 
         this.scoreAlreadySaved = true;
 
-        // Añadir a la tabla y ordenar de mayor a menor
-        this.leaderboard.push({
-            name,
-            score: this.score,
-            reverted: this.revertedCount,
-            date: Date.now()
-        });
-
-        this.leaderboard.sort((a, b) => b.score - a.score);
-        this.leaderboard = this.leaderboard.slice(0, 10); // Mantener top 10
-
-        localStorage.setItem('rafometro_leaderboard', JSON.stringify(this.leaderboard));
-
         if (this.saveScoreBtn) {
             this.saveScoreBtn.disabled = true;
             this.saveScoreBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            this.saveScoreBtn.textContent = "ENVIANDO...";
+        }
+
+        // Intento de guardado en la nube (/api/leaderboard)
+        let savedOnline = false;
+        try {
+            const res = await fetch('/api/leaderboard', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    score: this.score,
+                    reverted: this.revertedCount
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data && Array.isArray(data.leaderboard)) {
+                    this.leaderboard = data.leaderboard;
+                    localStorage.setItem('rafometro_leaderboard', JSON.stringify(this.leaderboard));
+                    savedOnline = true;
+                }
+            }
+        } catch (e) {
+            // Guardado local como fallback
+        }
+
+        if (!savedOnline) {
+            this.leaderboard.push({
+                name,
+                score: this.score,
+                reverted: this.revertedCount,
+                date: Date.now()
+            });
+            this.leaderboard.sort((a, b) => b.score - a.score);
+            this.leaderboard = this.leaderboard.slice(0, 10);
+            localStorage.setItem('rafometro_leaderboard', JSON.stringify(this.leaderboard));
+        }
+
+        if (this.saveScoreBtn) {
             this.saveScoreBtn.textContent = "✅ GUARDADO";
         }
 
@@ -232,10 +298,9 @@ class RayoAntirafadorGame {
             window.soundSystem.playFanfare();
         }
 
-        // Renderizar tabla resaltando el jugador
+        // Renderizar tabla resaltando al jugador
         this.renderLeaderboard(name);
 
-        // Si quedó en 1er puesto, actualizar récord global
         if (this.score > this.highScore) {
             this.highScore = this.score;
             localStorage.setItem('rafometro_game_highscore', this.highScore);

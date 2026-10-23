@@ -1,0 +1,17 @@
+{
+  "name": "rafometro",
+  "version": "1.0.0",
+  "description": "El Rafómetro - Detector de Haters y Arcade 8-Bit de @soyjennia",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "rafometro",
+    "soyjennia",
+    "arcade",
+    "leaderboard"
+  ],
+  "author": "mrrichar11",
+  "license": "MIT"
+}
