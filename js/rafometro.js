@@ -35,6 +35,7 @@ class Rafometro {
 
         this.isScanning = false;
         this.isOcrProcessing = false;
+        this.currentSource = 'Texto';
         this.init();
     }
 
@@ -209,7 +210,8 @@ class Rafometro {
 
                 if (window.soundSystem) window.soundSystem.playRevertSuccess();
 
-                // Analizar automáticamente el texto leído
+                // Analizar automáticamente el texto leído desde la captura
+                this.currentSource = 'Captura OCR';
                 setTimeout(() => {
                     this.analyze();
                 }, 400);
@@ -324,7 +326,29 @@ class Rafometro {
         this.currentMetrics = metrics;
         this.currentComment = comment;
 
+        // Registrar en el historial privado de Jenny (Cloud)
+        this.logScanToHistory(comment, metrics);
+
+        // Resetear fuente a texto para el próximo análisis
+        this.currentSource = 'Texto';
+
         this.resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    async logScanToHistory(comment, metrics) {
+        try {
+            fetch('/api/history', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    comment,
+                    percentage: metrics.percentage,
+                    kiNumber: metrics.kiNumber,
+                    title: metrics.title,
+                    source: this.currentSource || 'Texto'
+                })
+            }).catch(() => {});
+        } catch (e) {}
     }
 
     calculateRafaMetrics(comment) {
