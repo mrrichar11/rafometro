@@ -442,7 +442,7 @@ class Rafometro {
             textColor: '#1d4ed8',
             title: 'RAFA EN NEGACIÓN / DUDOSO',
             diagnosis: 'Comentario ambiguo. Tuvo un día largo pero en el fondo le encantan las historias de Buenos Aires.',
-            advice: 'Un saludo buena onda y suscripción al canal de YouTube de Jennifer Denise Rossi.',
+            advice: 'Un saludo buena onda y suscripción al canal de YouTube de Jenny.',
             corchito: 'Corchito Canelón le da una olfateada amistosa: tiene salvación.'
         };
     }

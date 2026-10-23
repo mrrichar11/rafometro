@@ -1,6 +1,6 @@
 # ⚡ EL RAFÓMETRO 🎮
 ### Edición Retro Gamer Minimalista (Light Theme) con Lector OCR de Capturas
-Inspirado en la comunidad de **[@soyjennia](https://instagram.com/soyjennia)**, su perro salchicha **Corchito Canelón** 🐶, su canal de YouTube **[Jennifer Denise Rossi](https://www.youtube.com/@soyjennia)** y sus transmisiones en Kick como **[Kakarotta](https://kick.com/kakarotta)**.
+Inspirado en la comunidad de **[@soyjennia](https://instagram.com/soyjennia)**, su perro salchicha **Corchito Canelón** 🐶, su canal de YouTube **[Jenny (@soyjennia)](https://www.youtube.com/@soyjennia)** y sus transmisiones en Kick como **[Kakarotta](https://kick.com/kakarotta)**.
 
 ---
 
@@ -35,6 +35,6 @@ Inspirado en la comunidad de **[@soyjennia](https://instagram.com/soyjennia)**, 
    - Cuestionario de 6 niveles con situaciones reales de redes sociales.
 
 4. **🐶 Módulo 4: Canales Oficiales & Lore**
-   - Enlace directo a YouTube: [Jennifer Denise Rossi (@soyjennia)](https://www.youtube.com/@soyjennia)
+   - Enlace directo a YouTube: [Jenny (@soyjennia)](https://www.youtube.com/@soyjennia)
    - Enlace directo a Kick: [Kakarotta Streamer](https://kick.com/kakarotta)
    - Instagram: [@soyjennia](https://www.instagram.com/soyjennia)

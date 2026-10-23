@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "Soy Corchito Canelón. Si tirás mala onda, te muerdo las medias.",
         "¡Dejen de tirar hate y vayan a ponerle dulce de leche a las tostadas!",
         "Falsa humildad las bolas, ¡aguante Jennia y los salchichas!",
-        "¿Ya te suscribiste al canal de YouTube de Jennifer Denise Rossi?",
+        "¿Ya te suscribiste al canal de YouTube de Jenny?",
         "Prendé Kick que Kakarotta está en vivo, ¡guau!"
     ];
 
