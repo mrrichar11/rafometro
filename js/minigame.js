@@ -1,7 +1,7 @@
 /**
  * Minijuego: El Rayo Antirafador (Arcade 8-Bit)
  * Usa las imágenes oficiales de Rafamalo y Rafabueno.
- * ¡CUIDADO! Aparecen perritos salchichas en 8 bits (Corchito) a los que NO hay que disparar.
+ * Incluye Sistema de Ranking de Líderes (Top Convertidores de Rafas) con guardado persistente.
  */
 
 class RayoAntirafadorGame {
@@ -22,6 +22,14 @@ class RayoAntirafadorGame {
         this.playAgainBtn = document.getElementById('playAgainBtn');
         this.corchitoPowerBtn = document.getElementById('corchitoPowerBtn');
 
+        // Elementos del Ranking de Líderes
+        this.playerNameInput = document.getElementById('playerNameInput');
+        this.saveScoreBtn = document.getElementById('saveScoreBtn');
+        this.saveScoreSuccess = document.getElementById('saveScoreSuccess');
+        this.saveScoreForm = document.getElementById('saveScoreForm');
+        this.leaderboardList = document.getElementById('leaderboardList');
+        this.resetRankingBtn = document.getElementById('resetRankingBtn');
+
         this.isPlaying = false;
         this.score = 0;
         this.revertedCount = 0;
@@ -32,6 +40,7 @@ class RayoAntirafadorGame {
         this.spawnRate = 880;
         this.corchitoCharged = true;
         this.shakeTimer = 0;
+        this.scoreAlreadySaved = false;
 
         this.targets = []; // Rafas y Perritos
         this.particles = [];
@@ -59,6 +68,10 @@ class RayoAntirafadorGame {
         this.highScore = parseInt(localStorage.getItem('rafometro_game_highscore') || '0', 10);
         this.updateHighScoreDisplay();
 
+        // Cargar y mostrar ranking inicial
+        this.loadLeaderboard();
+        this.renderLeaderboard();
+
         this.init();
     }
 
@@ -81,6 +94,28 @@ class RayoAntirafadorGame {
             this.corchitoPowerBtn.addEventListener('click', () => this.triggerCorchitoAttack());
         }
 
+        // Guardar nombre en el ranking
+        if (this.saveScoreBtn) {
+            this.saveScoreBtn.addEventListener('click', () => this.handleSavePlayerScore());
+        }
+
+        if (this.playerNameInput) {
+            this.playerNameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    this.handleSavePlayerScore();
+                }
+            });
+        }
+
+        // Botón reiniciar ranking
+        if (this.resetRankingBtn) {
+            this.resetRankingBtn.addEventListener('click', () => {
+                if (confirm('¿Querés reiniciar la tabla a los campeones iniciales?')) {
+                    this.resetLeaderboard();
+                }
+            });
+        }
+
         this.canvas.addEventListener('mousedown', (e) => this.handlePointerDown(e));
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -91,6 +126,139 @@ class RayoAntirafadorGame {
         requestAnimationFrame((t) => this.gameLoop(t));
     }
 
+    // ==========================================
+    // SISTEMA DE RANKING / LEADERBOARD
+    // ==========================================
+    getDefaultLeaderboard() {
+        return [
+            { name: "Corchito Canelón 🐾", score: 8500, reverted: 28 },
+            { name: "Kakarotta Streamer ⚡", score: 7200, reverted: 24 },
+            { name: "Ralph con Capa 🦇", score: 5400, reverted: 18 },
+            { name: "Fan de los Mates 🍵", score: 3900, reverted: 13 },
+            { name: "Ex-Hater Revertido ✨", score: 2800, reverted: 9 }
+        ];
+    }
+
+    loadLeaderboard() {
+        const saved = localStorage.getItem('rafometro_leaderboard');
+        if (saved) {
+            try {
+                this.leaderboard = JSON.parse(saved);
+            } catch (e) {
+                this.leaderboard = this.getDefaultLeaderboard();
+            }
+        } else {
+            this.leaderboard = this.getDefaultLeaderboard();
+            localStorage.setItem('rafometro_leaderboard', JSON.stringify(this.leaderboard));
+        }
+    }
+
+    renderLeaderboard(highlightName = null) {
+        if (!this.leaderboardList) return;
+        this.leaderboardList.innerHTML = '';
+
+        this.leaderboard.forEach((entry, idx) => {
+            const tr = document.createElement('tr');
+            const isHighlight = highlightName && entry.name === highlightName;
+
+            if (isHighlight) {
+                tr.className = "bg-yellow-100 font-extrabold border-l-4 border-yellow-500 animate-pulse";
+            } else if (idx % 2 === 0) {
+                tr.className = "bg-slate-50/70 hover:bg-yellow-50/40";
+            } else {
+                tr.className = "bg-white hover:bg-yellow-50/40";
+            }
+
+            // Posición con medallas
+            let posBadge = '';
+            if (idx === 0) {
+                posBadge = `<span class="px-1.5 py-0.5 bg-yellow-300 text-slate-900 rounded font-pixel text-[9px] border border-slate-900 shadow-sm">🥇 1º</span>`;
+            } else if (idx === 1) {
+                posBadge = `<span class="px-1.5 py-0.5 bg-slate-200 text-slate-900 rounded font-pixel text-[9px] border border-slate-900 shadow-sm">🥈 2º</span>`;
+            } else if (idx === 2) {
+                posBadge = `<span class="px-1.5 py-0.5 bg-amber-200 text-amber-950 rounded font-pixel text-[9px] border border-slate-900 shadow-sm">🥉 3º</span>`;
+            } else {
+                posBadge = `<span class="text-slate-500 font-pixel text-[10px]">#${idx + 1}</span>`;
+            }
+
+            tr.innerHTML = `
+                <td class="py-2.5 px-3 whitespace-nowrap">${posBadge}</td>
+                <td class="py-2.5 px-3 font-bold text-slate-900 flex items-center space-x-1.5">
+                    <span>${this.escapeHtml(entry.name)}</span>
+                    ${isHighlight ? '<span class="text-[9px] bg-emerald-500 text-white px-1.5 py-0.5 rounded font-pixel">¡VOS!</span>' : ''}
+                </td>
+                <td class="py-2.5 px-3 text-center font-pixel text-[11px] text-emerald-600">${entry.reverted || 0}</td>
+                <td class="py-2.5 px-3 text-right font-pixel text-[11px] text-slate-900">${entry.score.toLocaleString()}</td>
+            `;
+
+            this.leaderboardList.appendChild(tr);
+        });
+    }
+
+    handleSavePlayerScore() {
+        if (this.scoreAlreadySaved) return;
+
+        let name = (this.playerNameInput ? this.playerNameInput.value : '').trim();
+        if (!name) {
+            name = "Anónimo Buena Onda";
+        }
+
+        this.scoreAlreadySaved = true;
+
+        // Añadir a la tabla y ordenar de mayor a menor
+        this.leaderboard.push({
+            name,
+            score: this.score,
+            reverted: this.revertedCount,
+            date: Date.now()
+        });
+
+        this.leaderboard.sort((a, b) => b.score - a.score);
+        this.leaderboard = this.leaderboard.slice(0, 10); // Mantener top 10
+
+        localStorage.setItem('rafometro_leaderboard', JSON.stringify(this.leaderboard));
+
+        if (this.saveScoreBtn) {
+            this.saveScoreBtn.disabled = true;
+            this.saveScoreBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            this.saveScoreBtn.textContent = "✅ GUARDADO";
+        }
+
+        if (this.saveScoreSuccess) {
+            this.saveScoreSuccess.classList.remove('hidden');
+        }
+
+        if (window.soundSystem) {
+            window.soundSystem.playFanfare();
+        }
+
+        // Renderizar tabla resaltando el jugador
+        this.renderLeaderboard(name);
+
+        // Si quedó en 1er puesto, actualizar récord global
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('rafometro_game_highscore', this.highScore);
+            this.updateHighScoreDisplay();
+        }
+    }
+
+    resetLeaderboard() {
+        this.leaderboard = this.getDefaultLeaderboard();
+        localStorage.setItem('rafometro_leaderboard', JSON.stringify(this.leaderboard));
+        this.renderLeaderboard();
+        if (window.soundSystem) window.soundSystem.playClick();
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ==========================================
+    // LÓGICA DEL MOTOR DE JUEGO ARCADE
+    // ==========================================
     resizeCanvas() {
         const container = this.canvas.parentElement;
         if (!container) return;
@@ -117,10 +285,18 @@ class RayoAntirafadorGame {
         this.lasers = [];
         this.floatingTexts = [];
         this.corchitoCharged = true;
+        this.scoreAlreadySaved = false;
         this.isPlaying = true;
 
         if (this.startBtn) this.startBtn.classList.add('hidden');
         if (this.gameOverOverlay) this.gameOverOverlay.classList.add('hidden');
+        if (this.saveScoreBtn) {
+            this.saveScoreBtn.disabled = false;
+            this.saveScoreBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            this.saveScoreBtn.textContent = "GUARDAR";
+        }
+        if (this.saveScoreSuccess) this.saveScoreSuccess.classList.add('hidden');
+
         this.updateCorchitoBtnUI();
         this.updateStatsUI();
 
@@ -155,6 +331,10 @@ class RayoAntirafadorGame {
         if (this.finalRevertedText) this.finalRevertedText.textContent = this.revertedCount;
         if (this.gameOverOverlay) this.gameOverOverlay.classList.remove('hidden');
 
+        if (this.playerNameInput) {
+            this.playerNameInput.focus();
+        }
+
         if (window.soundSystem) {
             window.soundSystem.playFanfare();
         }
@@ -182,7 +362,6 @@ class RayoAntirafadorGame {
             window.soundSystem.playCorchitoBark();
         }
 
-        // Revertir a todos los Rafas en pantalla (respetando a los perritos)
         let countReverted = 0;
         this.targets.forEach(item => {
             if (item.type === 'rafa' && item.state === 'hater') {
@@ -209,7 +388,7 @@ class RayoAntirafadorGame {
     }
 
     spawnTarget() {
-        const isPuppy = Math.random() < 0.28; // 28% de probabilidad de que aparezca el perrito salchicha en 8-bits
+        const isPuppy = Math.random() < 0.28;
         const size = isPuppy ? 36 : 38;
         const margin = size + 20;
         const x = margin + Math.random() * (this.canvas.width - margin * 2);
@@ -277,10 +456,8 @@ class RayoAntirafadorGame {
                 hit = true;
 
                 if (item.type === 'puppy') {
-                    // ¡LE DISPARÓ AL PERRITO SALCHICHA! PENALIZACIÓN
                     this.hitPuppy(item);
                 } else if (item.type === 'rafa' && item.state === 'hater') {
-                    // Impacto a Rafamalo -> se convierte en Rafabueno
                     this.revertRafa(item);
                 }
                 break;
@@ -298,10 +475,7 @@ class RayoAntirafadorGame {
             window.soundSystem.playDogWhimper();
         }
 
-        // Sacudida de pantalla
         this.shakeTimer = 18;
-
-        // Penalización de puntaje
         const penalty = 200;
         this.score = Math.max(0, this.score - penalty);
         this.combo = 1;
@@ -316,7 +490,6 @@ class RayoAntirafadorGame {
             color: '#ef4444'
         });
 
-        // Partículas rojas de alerta
         for (let i = 0; i < 12; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = Math.random() * 3 + 1;
@@ -332,7 +505,6 @@ class RayoAntirafadorGame {
             });
         }
 
-        // El perrito huye rápido
         puppy.vx *= 3;
         puppy.vy *= 3;
         puppy.phrase = '¡AY GUAU! 😿';
@@ -366,7 +538,6 @@ class RayoAntirafadorGame {
             color: '#16a34a'
         });
 
-        // Partículas festivas
         for (let i = 0; i < 15; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = Math.random() * 3.5 + 1.5;
@@ -395,7 +566,6 @@ class RayoAntirafadorGame {
     gameLoop(timestamp) {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Efecto sacudida si le dispararon a Corchito
         let offsetX = 0;
         let offsetY = 0;
         if (this.shakeTimer > 0) {
@@ -407,7 +577,7 @@ class RayoAntirafadorGame {
         this.ctx.save();
         this.ctx.translate(offsetX, offsetY);
 
-        // Fondo reticulado retro tenue
+        // Cuadrícula retro
         this.ctx.strokeStyle = '#e2e8f0';
         this.ctx.lineWidth = 1;
         for (let x = 0; x < this.canvas.width; x += 30) {
@@ -430,7 +600,7 @@ class RayoAntirafadorGame {
             }
         }
 
-        // 1. Rayos láser
+        // Rayos láser
         for (let i = this.lasers.length - 1; i >= 0; i--) {
             const l = this.lasers[i];
             this.ctx.save();
@@ -455,18 +625,16 @@ class RayoAntirafadorGame {
             }
         }
 
-        // 2. Objetivos (Rafamalo, Rafabueno y Perrito 8-bit)
+        // Objetivos
         const now = Date.now();
         for (let i = this.targets.length - 1; i >= 0; i--) {
             const target = this.targets[i];
             target.x += target.vx;
             target.y += target.vy;
 
-            // Rebotar en bordes
             if (target.x - target.size < 5 || target.x + target.size > this.canvas.width - 5) target.vx *= -1;
             if (target.y - target.size < 5 || target.y + target.size > this.canvas.height - 5) target.vy *= -1;
 
-            // Expiración natural
             if (now - target.born > target.lifetime && target.state !== 'reverted') {
                 target.alpha -= 0.05;
                 if (target.alpha <= 0) {
@@ -475,7 +643,6 @@ class RayoAntirafadorGame {
                 }
             }
 
-            // Si está revertido, sube felizmente al cielo
             if (target.state === 'reverted') {
                 target.y -= 1.8;
                 target.alpha -= 0.03;
@@ -488,7 +655,7 @@ class RayoAntirafadorGame {
             this.drawTarget(target);
         }
 
-        // 3. Partículas
+        // Partículas
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
             p.x += p.vx;
@@ -508,7 +675,7 @@ class RayoAntirafadorGame {
             }
         }
 
-        // 4. Textos flotantes
+        // Textos flotantes
         for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
             const ft = this.floatingTexts[i];
             ft.y += ft.vy;
@@ -538,10 +705,8 @@ class RayoAntirafadorGame {
         this.ctx.globalAlpha = target.alpha;
 
         if (target.type === 'puppy') {
-            // DIBUJAR PERRITO SALCHICHA EN 8 BITS (CORCHITO)
             this.draw8BitDachshund(target.x, target.y, target.size);
 
-            // Bocadillo de advertencia
             this.ctx.font = "bold 8px 'Press Start 2P', monospace";
             const textW = this.ctx.measureText(target.phrase).width;
             const bW = textW + 10;
@@ -564,17 +729,14 @@ class RayoAntirafadorGame {
             const drawSize = target.size * 2;
 
             if (img.complete && img.naturalWidth > 0) {
-                // Dibujar la imagen de Rafamalo / Rafabueno
                 this.ctx.drawImage(img, target.x - target.size, target.y - target.size, drawSize, drawSize);
             } else {
-                // Fallback circular si aún estuviera cargando
                 this.ctx.beginPath();
                 this.ctx.arc(target.x, target.y, target.size * 0.8, 0, Math.PI * 2);
                 this.ctx.fillStyle = isReverted ? '#facc15' : '#ef4444';
                 this.ctx.fill();
             }
 
-            // Halo celestial dorado si está revertido
             if (isReverted) {
                 this.ctx.beginPath();
                 this.ctx.ellipse(target.x, target.y - target.size - 6, target.size * 0.7, 5, 0, 0, Math.PI * 2);
@@ -583,7 +745,6 @@ class RayoAntirafadorGame {
                 this.ctx.stroke();
             }
 
-            // Bocadillo con la frase
             this.ctx.font = "bold 9px 'Press Start 2P', monospace";
             const textW = this.ctx.measureText(target.phrase).width;
             const bW = textW + 10;
@@ -604,13 +765,11 @@ class RayoAntirafadorGame {
         this.ctx.restore();
     }
 
-    // Dibujo procedural del perro salchicha en 8-bits pixel art
     draw8BitDachshund(cx, cy, radius) {
-        const pSize = 3; // Tamaño del píxel
+        const pSize = 3;
         const startX = cx - 24;
         const startY = cy - 14;
 
-        // Mapa de píxeles del perro salchicha (0 = vacío, 1 = marrón oscuro, 2 = marrón claro / hocico, 3 = negro ojo / nariz)
         const dachshundMap = [
             [0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0],
             [0,0,0,0,0,0,0,0,0,0,0,1,1,3,1,1,0],
@@ -624,9 +783,9 @@ class RayoAntirafadorGame {
         ];
 
         const colors = {
-            1: '#3e2723', // Marrón chocolate clásico salchicha
-            2: '#8d6e63', // Caramelo hocico
-            3: '#0f172a'  // Negro ojo / nariz
+            1: '#3e2723',
+            2: '#8d6e63',
+            3: '#0f172a'
         };
 
         for (let r = 0; r < dachshundMap.length; r++) {
@@ -639,7 +798,6 @@ class RayoAntirafadorGame {
             }
         }
 
-        // Borde pixelado sutil o aura verde para saber que es bueno
         this.ctx.strokeStyle = '#22c55e';
         this.ctx.lineWidth = 1.5;
         this.ctx.strokeRect(startX - 2, startY - 2, dachshundMap[0].length * pSize + 4, dachshundMap.length * pSize + 4);
