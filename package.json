@@ -15,6 +15,7 @@
   "author": "mrrichar11",
   "license": "MIT",
   "dependencies": {
-    "ioredis": "^6.0.0"
+    "ioredis": "^6.0.0",
+    "redis": "^6.3.0"
   }
 }

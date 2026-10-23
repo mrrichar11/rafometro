@@ -1,10 +1,7 @@
 /**
  * Vercel Serverless Function: /api/leaderboard
  * Gestiona el ranking global y compartido de "Top Convertidores de Rafas"
- * Compatible con:
- * - Redis Oficial de Vercel (REDIS_URL via ioredis)
- * - Upstash / Vercel KV REST (KV_REST_API_URL / UPSTASH_REDIS_REST_URL)
- * - Fallback local resiliente
+ * Utiliza la integración oficial de Redis para Vercel (node-redis / REDIS_URL)
  */
 
 const DEFAULT_LEADERBOARD = [
@@ -15,52 +12,55 @@ const DEFAULT_LEADERBOARD = [
     { name: "Ex-Hater Revertido ✨", score: 2800, reverted: 9 }
 ];
 
-let redisClient = null;
+let cachedClient = null;
 
-function getRedisClient() {
-    const redisUrl = process.env.STORAGE_URL || process.env.REDIS_URL;
+async function getClient() {
+    const redisUrl = process.env.REDIS_URL || process.env.STORAGE_URL;
     if (!redisUrl) return null;
 
-    if (!redisClient) {
-        try {
-            const Redis = require('ioredis');
-            redisClient = new Redis(redisUrl, {
-                maxRetriesPerRequest: 1,
-                connectTimeout: 5000,
-                lazyConnect: true
-            });
-        } catch (e) {
-            console.error('Error instanciando ioredis:', e);
-            return null;
-        }
+    if (cachedClient && cachedClient.isOpen) {
+        return cachedClient;
     }
-    return redisClient;
+
+    try {
+        const { createClient } = require('redis');
+        cachedClient = createClient({
+            url: redisUrl,
+            socket: {
+                connectTimeout: 5000,
+                reconnectStrategy: (retries) => (retries > 2 ? false : 500)
+            }
+        });
+
+        cachedClient.on('error', (err) => {
+            console.error('Redis Client Error:', err);
+        });
+
+        await cachedClient.connect();
+        return cachedClient;
+    } catch (e) {
+        console.error('Error conectando con node-redis:', e);
+        return null;
+    }
 }
 
 async function getStoredLeaderboard() {
-    const redisUrl = process.env.STORAGE_URL || process.env.REDIS_URL;
-    const kvUrl = process.env.STORAGE_REST_API_URL || process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-    const kvToken = process.env.STORAGE_REST_API_TOKEN || process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-
-    // 1. Intentar con Redis oficial (REDIS_URL)
-    if (redisUrl) {
-        const client = getRedisClient();
-        if (client) {
-            try {
-                if (client.status !== 'ready') {
-                    await client.connect();
-                }
-                const data = await client.get('rafometro_leaderboard');
-                if (data) {
-                    return JSON.parse(data);
-                }
-            } catch (err) {
-                console.error('Error leyendo con ioredis:', err);
+    // 1. Intentar con node-redis oficial (REDIS_URL / STORAGE_URL)
+    const client = await getClient();
+    if (client && client.isOpen) {
+        try {
+            const raw = await client.get('rafometro_leaderboard');
+            if (raw) {
+                return JSON.parse(raw);
             }
+        } catch (err) {
+            console.error('Error al hacer GET en Redis:', err);
         }
     }
 
-    // 2. Intentar con Upstash / Vercel KV REST API
+    // 2. Intentar con KV REST si estuviera configurado
+    const kvUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+    const kvToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
     if (kvUrl && kvToken) {
         try {
             const resp = await fetch(`${kvUrl}/get/rafometro_leaderboard`, {
@@ -70,8 +70,8 @@ async function getStoredLeaderboard() {
             if (data && data.result) {
                 return typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
             }
-        } catch (err) {
-            console.error('Error leyendo con KV REST:', err);
+        } catch (e) {
+            console.error('Error con KV REST:', e);
         }
     }
 
@@ -79,27 +79,18 @@ async function getStoredLeaderboard() {
 }
 
 async function setStoredLeaderboard(leaderboard) {
-    const redisUrl = process.env.STORAGE_URL || process.env.REDIS_URL;
-    const kvUrl = process.env.STORAGE_REST_API_URL || process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-    const kvToken = process.env.STORAGE_REST_API_TOKEN || process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-
-    // 1. Intentar con Redis oficial
-    if (redisUrl) {
-        const client = getRedisClient();
-        if (client) {
-            try {
-                if (client.status !== 'ready') {
-                    await client.connect();
-                }
-                await client.set('rafometro_leaderboard', JSON.stringify(leaderboard));
-                return true;
-            } catch (err) {
-                console.error('Error guardando con ioredis:', err);
-            }
+    const client = await getClient();
+    if (client && client.isOpen) {
+        try {
+            await client.set('rafometro_leaderboard', JSON.stringify(leaderboard));
+            return true;
+        } catch (err) {
+            console.error('Error al hacer SET en Redis:', err);
         }
     }
 
-    // 2. Intentar con KV REST
+    const kvUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+    const kvToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
     if (kvUrl && kvToken) {
         try {
             await fetch(`${kvUrl}/set/rafometro_leaderboard`, {
@@ -111,8 +102,8 @@ async function setStoredLeaderboard(leaderboard) {
                 body: JSON.stringify(leaderboard)
             });
             return true;
-        } catch (err) {
-            console.error('Error guardando con KV REST:', err);
+        } catch (e) {
+            console.error('Error guardando en KV REST:', e);
         }
     }
 
@@ -129,9 +120,8 @@ module.exports = async (req, res) => {
     }
 
     const isConnected = Boolean(
-        process.env.STORAGE_URL ||
         process.env.REDIS_URL || 
-        (process.env.STORAGE_REST_API_URL && process.env.STORAGE_REST_API_TOKEN) ||
+        process.env.STORAGE_URL ||
         (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
         (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
     );
