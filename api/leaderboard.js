@@ -1,7 +1,10 @@
 /**
  * Vercel Serverless Function: /api/leaderboard
  * Gestiona el ranking global y compartido de "Top Convertidores de Rafas"
- * Compatible con Vercel KV (Upstash Redis REST API) con fallback resiliente.
+ * Compatible con:
+ * - Redis Oficial de Vercel (REDIS_URL via ioredis)
+ * - Upstash / Vercel KV REST (KV_REST_API_URL / UPSTASH_REDIS_REST_URL)
+ * - Fallback local resiliente
  */
 
 const DEFAULT_LEADERBOARD = [
@@ -12,22 +15,53 @@ const DEFAULT_LEADERBOARD = [
     { name: "Ex-Hater Revertido ✨", score: 2800, reverted: 9 }
 ];
 
-module.exports = async (req, res) => {
-    // Configuración CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+let redisClient = null;
 
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
+function getRedisClient() {
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) return null;
+
+    if (!redisClient) {
+        try {
+            const Redis = require('ioredis');
+            redisClient = new Redis(redisUrl, {
+                maxRetriesPerRequest: 1,
+                connectTimeout: 5000,
+                lazyConnect: true
+            });
+        } catch (e) {
+            console.error('Error instanciando ioredis:', e);
+            return null;
+        }
     }
+    return redisClient;
+}
 
+async function getStoredLeaderboard() {
+    const redisUrl = process.env.REDIS_URL;
     const kvUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
     const kvToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
-    // Helper para interactuar con Upstash / Vercel KV REST
-    async function getKvLeaderboard() {
-        if (!kvUrl || !kvToken) return null;
+    // 1. Intentar con Redis oficial (REDIS_URL)
+    if (redisUrl) {
+        const client = getRedisClient();
+        if (client) {
+            try {
+                if (client.status !== 'ready') {
+                    await client.connect();
+                }
+                const data = await client.get('rafometro_leaderboard');
+                if (data) {
+                    return JSON.parse(data);
+                }
+            } catch (err) {
+                console.error('Error leyendo con ioredis:', err);
+            }
+        }
+    }
+
+    // 2. Intentar con Upstash / Vercel KV REST API
+    if (kvUrl && kvToken) {
         try {
             const resp = await fetch(`${kvUrl}/get/rafometro_leaderboard`, {
                 headers: { Authorization: `Bearer ${kvToken}` }
@@ -36,15 +70,37 @@ module.exports = async (req, res) => {
             if (data && data.result) {
                 return typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
             }
-            return null;
         } catch (err) {
-            console.error('Error al leer KV:', err);
-            return null;
+            console.error('Error leyendo con KV REST:', err);
         }
     }
 
-    async function setKvLeaderboard(leaderboard) {
-        if (!kvUrl || !kvToken) return false;
+    return null;
+}
+
+async function setStoredLeaderboard(leaderboard) {
+    const redisUrl = process.env.REDIS_URL;
+    const kvUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+    const kvToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    // 1. Intentar con Redis oficial
+    if (redisUrl) {
+        const client = getRedisClient();
+        if (client) {
+            try {
+                if (client.status !== 'ready') {
+                    await client.connect();
+                }
+                await client.set('rafometro_leaderboard', JSON.stringify(leaderboard));
+                return true;
+            } catch (err) {
+                console.error('Error guardando con ioredis:', err);
+            }
+        }
+    }
+
+    // 2. Intentar con KV REST
+    if (kvUrl && kvToken) {
         try {
             await fetch(`${kvUrl}/set/rafometro_leaderboard`, {
                 method: 'POST',
@@ -56,37 +112,52 @@ module.exports = async (req, res) => {
             });
             return true;
         } catch (err) {
-            console.error('Error al guardar en KV:', err);
-            return false;
+            console.error('Error guardando con KV REST:', err);
         }
     }
 
-    // 1. GET: Consultar el ranking global actual
+    return false;
+}
+
+module.exports = async (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
+    const isConnected = Boolean(
+        process.env.REDIS_URL || 
+        (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
+        (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+    );
+
+    // 1. GET: Consultar ranking
     if (req.method === 'GET') {
-        let board = await getKvLeaderboard();
-        const isLive = Boolean(kvUrl && kvToken);
+        let board = await getStoredLeaderboard();
 
         if (!board || !Array.isArray(board) || board.length === 0) {
             board = DEFAULT_LEADERBOARD;
-            if (isLive) {
-                await setKvLeaderboard(board);
+            if (isConnected) {
+                await setStoredLeaderboard(board);
             }
         }
 
         return res.status(200).json({
             success: true,
-            isLive,
+            isLive: isConnected,
             leaderboard: board.slice(0, 10)
         });
     }
 
-    // 2. POST: Registrar una nueva puntuación en la nube
+    // 2. POST: Registrar nueva puntuación
     if (req.method === 'POST') {
         try {
             const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
             let { name, score, reverted } = body || {};
 
-            // Sanitización
             name = String(name || 'Anónimo')
                 .replace(/<[^>]*>?/gm, '')
                 .trim()
@@ -98,16 +169,14 @@ module.exports = async (req, res) => {
 
             if (isNaN(score) || score < 0) score = 0;
             if (isNaN(reverted) || reverted < 0) reverted = 0;
-            if (score > 100000) score = 100000; // Límite de seguridad anti-trampas
+            if (score > 100000) score = 100000;
 
-            let board = await getKvLeaderboard();
-            const isLive = Boolean(kvUrl && kvToken);
+            let board = await getStoredLeaderboard();
 
             if (!board || !Array.isArray(board)) {
                 board = [...DEFAULT_LEADERBOARD];
             }
 
-            // Agregar el nuevo puntaje
             board.push({
                 name,
                 score,
@@ -115,17 +184,16 @@ module.exports = async (req, res) => {
                 date: Date.now()
             });
 
-            // Ordenar de mayor a menor y mantener el top 12
             board.sort((a, b) => b.score - a.score);
             board = board.slice(0, 12);
 
-            if (isLive) {
-                await setKvLeaderboard(board);
+            if (isConnected) {
+                await setStoredLeaderboard(board);
             }
 
             return res.status(200).json({
                 success: true,
-                isLive,
+                isLive: isConnected,
                 leaderboard: board.slice(0, 10),
                 savedEntry: { name, score, reverted }
             });
@@ -134,7 +202,7 @@ module.exports = async (req, res) => {
             console.error('Error procesando score:', err);
             return res.status(500).json({
                 success: false,
-                error: 'Error interno al guardar la puntuación'
+                error: 'Error interno al registrar la puntuación'
             });
         }
     }

@@ -13,5 +13,8 @@
     "leaderboard"
   ],
   "author": "mrrichar11",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "ioredis": "^6.0.0"
+  }
 }
