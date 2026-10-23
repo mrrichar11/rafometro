@@ -18,7 +18,7 @@ const DEFAULT_LEADERBOARD = [
 let redisClient = null;
 
 function getRedisClient() {
-    const redisUrl = process.env.REDIS_URL;
+    const redisUrl = process.env.STORAGE_URL || process.env.REDIS_URL;
     if (!redisUrl) return null;
 
     if (!redisClient) {
@@ -38,9 +38,9 @@ function getRedisClient() {
 }
 
 async function getStoredLeaderboard() {
-    const redisUrl = process.env.REDIS_URL;
-    const kvUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-    const kvToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+    const redisUrl = process.env.STORAGE_URL || process.env.REDIS_URL;
+    const kvUrl = process.env.STORAGE_REST_API_URL || process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+    const kvToken = process.env.STORAGE_REST_API_TOKEN || process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
     // 1. Intentar con Redis oficial (REDIS_URL)
     if (redisUrl) {
@@ -79,9 +79,9 @@ async function getStoredLeaderboard() {
 }
 
 async function setStoredLeaderboard(leaderboard) {
-    const redisUrl = process.env.REDIS_URL;
-    const kvUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-    const kvToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+    const redisUrl = process.env.STORAGE_URL || process.env.REDIS_URL;
+    const kvUrl = process.env.STORAGE_REST_API_URL || process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+    const kvToken = process.env.STORAGE_REST_API_TOKEN || process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
     // 1. Intentar con Redis oficial
     if (redisUrl) {
@@ -129,7 +129,9 @@ module.exports = async (req, res) => {
     }
 
     const isConnected = Boolean(
+        process.env.STORAGE_URL ||
         process.env.REDIS_URL || 
+        (process.env.STORAGE_REST_API_URL && process.env.STORAGE_REST_API_TOKEN) ||
         (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) ||
         (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
     );
