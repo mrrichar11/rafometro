@@ -21,6 +21,10 @@ class Rafometro {
         this.revertedBox = document.getElementById('revertedMessageBox');
         this.revertedText = document.getElementById('revertedText');
         this.copyVerdictBtn = document.getElementById('copyVerdictBtn');
+        this.shareCardBtn = document.getElementById('shareScouterCardBtn');
+        this.haterRouletteBtn = document.getElementById('haterRouletteBtn');
+        this.antirafaResponsesList = document.getElementById('antirafaResponsesList');
+        this.antirafaContainer = document.getElementById('antirafaResponsesContainer');
 
         // Elementos de Carga y Lectura OCR de Imágenes
         this.imageDropZone = document.getElementById('imageDropZone');
@@ -43,6 +47,20 @@ class Rafometro {
         if (!this.analyzeBtn) return;
 
         this.analyzeBtn.addEventListener('click', () => this.analyze());
+
+        // Botón Ruleta de Haters
+        if (this.haterRouletteBtn) {
+            this.haterRouletteBtn.addEventListener('click', () => this.triggerRoulette());
+        }
+
+        // Botón Compartir Tarjeta en Stories
+        if (this.shareCardBtn) {
+            this.shareCardBtn.addEventListener('click', () => {
+                if (window.storyCardGenerator && this.currentComment && this.currentMetrics) {
+                    window.storyCardGenerator.generateScouterCard(this.currentComment, this.currentMetrics);
+                }
+            });
+        }
 
         // Botones de presets rápidos
         const presetChips = document.querySelectorAll('.preset-chip');
@@ -326,6 +344,16 @@ class Rafometro {
         this.currentMetrics = metrics;
         this.currentComment = comment;
 
+        // Renderizar sugerencias de respuestas Antirafas
+        this.renderAntirafaResponses(comment, metrics);
+
+        // Desbloquear logro en el sistema de trofeos
+        if (window.rayoGame && window.rayoGame.unlockAchievement) {
+            window.rayoGame.unlockAchievement('cazador_haters');
+        } else {
+            localStorage.setItem('rafometro_ach_cazador_haters', 'true');
+        }
+
         // Registrar en el historial privado de Jenny (Cloud)
         this.logScanToHistory(comment, metrics);
 
@@ -333,6 +361,79 @@ class Rafometro {
         this.currentSource = 'Texto';
 
         this.resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    triggerRoulette() {
+        const roulettePhrases = [
+            "Falsa humildad 🙄 se nota que te armás el personaje para la cámara",
+            "Vivís de los demás, andá a laburar de verdad y dejá de quejarte",
+            "Sos re cheta e infumable, mostrás todo armado en tus historias",
+            "Sin ofender pero antes eras más humilde, se te subieron los humos",
+            "Nadie te preguntó tu opinión, dejá de figurar en todos lados",
+            "Seguro el perro salchicha ni te quiere y lo usás para vistas 🐶",
+            "Todo canje, todo plástico, andá a pagar tus cosas como cualquiera",
+            "¿Por qué habla con ese tono? Demasiado actuada para los reels",
+            "Con la mejor onda pero aflojale a los vlogs de Buenos Aires que aburrís",
+            "Antes me caías bien, ahora estás insoportable con los streams de Kick"
+        ];
+        const randomPhrase = roulettePhrases[Math.floor(Math.random() * roulettePhrases.length)];
+        if (this.inputEl) {
+            this.inputEl.value = randomPhrase;
+            if (window.soundSystem) window.soundSystem.playClick();
+            this.analyze();
+        }
+    }
+
+    renderAntirafaResponses(comment, metrics) {
+        if (!this.antirafaResponsesList) return;
+        this.antirafaResponsesList.innerHTML = '';
+
+        const responses = [
+            {
+                mode: "🧉 MODO ZEN / PAZ INTERIOR",
+                badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-400",
+                text: `«Te mando un abrazo enorme. Ojalá hoy te tomes un mate calentito en paz y te pase algo lindo que te saque esa amargura ✨»`
+            },
+            {
+                mode: "💅 MODO SARCASMO FINO",
+                badgeColor: "bg-purple-100 text-purple-800 border-purple-400",
+                text: `«Anotadísimo en mi libreta de opiniones no solicitadas que van directo a la papelera de reciclaje ✍️🗑️»`
+            },
+            {
+                mode: "🐶 MODO CORCHITO CANELÓN",
+                badgeColor: "bg-amber-100 text-amber-800 border-amber-400",
+                text: `«Corchito Canelón olió tu comentario, me miró con cara de salchicha juzgador y te mandó un ladrido para que vayas a acariciar pasto 🐾🦴»`
+            }
+        ];
+
+        responses.forEach(resp => {
+            const card = document.createElement('div');
+            card.className = "antirafa-card bg-white border-2 border-slate-900 rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-[2px_2px_0px_#0f172a]";
+            card.innerHTML = `
+                <div class="flex-1">
+                    <span class="inline-block text-[9px] font-pixel px-1.5 py-0.5 rounded border ${resp.badgeColor} mb-1">
+                        ${resp.mode}
+                    </span>
+                    <p class="text-xs text-slate-800 font-semibold italic">${resp.text}</p>
+                </div>
+                <button type="button" class="copy-resp-btn retro-btn bg-yellow-300 hover:bg-yellow-200 text-slate-900 font-pixel text-[9px] px-2.5 py-1.5 rounded-lg flex items-center space-x-1 flex-shrink-0 self-end sm:self-center">
+                    <span>📋 COPIAR</span>
+                </button>
+            `;
+
+            const copyBtn = card.querySelector('.copy-resp-btn');
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(resp.text).then(() => {
+                    if (window.soundSystem) window.soundSystem.playClick();
+                    copyBtn.innerHTML = '<span>✅ ¡COPIADO!</span>';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = '<span>📋 COPIAR</span>';
+                    }, 2000);
+                });
+            });
+
+            this.antirafaResponsesList.appendChild(card);
+        });
     }
 
     async logScanToHistory(comment, metrics) {

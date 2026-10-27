@@ -151,3 +151,55 @@ body {
     border: 2px solid var(--pixel-black);
     border-radius: 4px;
 }
+
+/* Modal de Compartir en Redes Sociales */
+#shareModal {
+    transition: opacity 0.2s ease-in-out;
+}
+
+#shareModal.hidden {
+    display: none;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#shareCardPreview {
+    max-height: 60vh;
+    object-fit: contain;
+    border: 3px solid var(--pixel-black);
+    box-shadow: 4px 4px 0px var(--pixel-black);
+    border-radius: 12px;
+}
+
+/* Salón de Logros */
+.achievement-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.achievement-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 4px 4px 0px var(--pixel-black);
+}
+
+.achievement-locked {
+    filter: grayscale(0.85);
+    opacity: 0.7;
+    background: #f1f5f9;
+}
+
+.achievement-unlocked {
+    filter: none;
+    opacity: 1;
+    background: #ffffff;
+    border-color: #0f172a;
+}
+
+/* Tarjetas de Respuestas Antirafas */
+.antirafa-card {
+    transition: all 0.15s ease;
+}
+
+.antirafa-card:hover {
+    border-color: #eab308;
+    background-color: #fefce8;
+}

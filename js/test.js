@@ -85,6 +85,7 @@ class RafaTest {
         this.quizPrescription = document.getElementById('quizPrescription');
         this.restartBtn = document.getElementById('restartQuizBtn');
         this.shareQuizBtn = document.getElementById('shareQuizBtn');
+        this.shareQuizCardBtn = document.getElementById('shareQuizCardBtn');
 
         this.init();
     }
@@ -98,6 +99,18 @@ class RafaTest {
 
         if (this.shareQuizBtn) {
             this.shareQuizBtn.addEventListener('click', () => this.shareResult());
+        }
+
+        if (this.shareQuizCardBtn) {
+            this.shareQuizCardBtn.addEventListener('click', () => {
+                if (window.storyCardGenerator && this.currentResult) {
+                    window.storyCardGenerator.generateAchievementCard({
+                        icon: '🧪',
+                        title: this.currentResult.title,
+                        desc: `Índice de Rafa: ${this.currentResult.score}% • ${this.currentResult.badge}`
+                    });
+                }
+            });
         }
 
         this.showQuestion(0);

@@ -164,7 +164,7 @@
                             </h2>
                         </div>
                         <p class="text-xs sm:text-sm text-slate-500 mt-1">
-                            Pegá un comentario de Instagram o elegí un clásico tropo para medir su Ki de toxicidad.
+                            ¿Te tiraron mala onda o te dejaron un comentario raro? Subí la captura o escribilo para medir su Ki y humillarlo con humor.
                         </p>
                     </div>
                     <span class="inline-flex items-center space-x-1 font-pixel text-[10px] bg-green-100 text-green-800 border-2 border-slate-900 px-2.5 py-1 rounded-full shadow-[2px_2px_0px_#0f172a] self-start sm:self-auto">
@@ -172,39 +172,15 @@
                     </span>
                 </div>
 
-                <!-- Chips de Presets -->
-                <div class="mb-4">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                        Comentarios típicos de Rafa (Hacé clic para probar):
-                    </label>
-                    <div class="flex flex-wrap gap-2">
-                        <button class="preset-chip retro-box-sm text-xs font-semibold px-3 py-1.5 hover:bg-yellow-200 transition-colors" data-comment="Falsa humildad 🙄">
-                            "Falsa humildad 🙄"
-                        </button>
-                        <button class="preset-chip retro-box-sm text-xs font-semibold px-3 py-1.5 hover:bg-yellow-200 transition-colors" data-comment="Vivís de los demás, andá a laburar de verdad">
-                            "Vivís de los demás, andá a laburar"
-                        </button>
-                        <button class="preset-chip retro-box-sm text-xs font-semibold px-3 py-1.5 hover:bg-yellow-200 transition-colors" data-comment="Sos re cheta e infumable, mostrás todo armado">
-                            "Sos re cheta e infumable"
-                        </button>
-                        <button class="preset-chip retro-box-sm text-xs font-semibold px-3 py-1.5 hover:bg-yellow-200 transition-colors" data-comment="Sin ofender pero antes eras más humilde, se te subieron los humos">
-                            "Antes eras más humilde"
-                        </button>
-                        <button class="preset-chip retro-box-sm bg-emerald-50 border-emerald-800 text-xs font-semibold px-3 py-1.5 hover:bg-emerald-200 transition-colors" data-comment="¡Te amo Jennia sos una genia total, y Corchito Canelón es lo más tierno! ❤️">
-                            "¡Te amo Jennia y aguante Corchito! ❤️"
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Zona de Carga / Pegado de Imagen (Lector OCR de Capturas) -->
+                <!-- Zona de Carga / Pegado de Imagen (Lector OCR de Capturas) - Destacada -->
                 <div class="mb-3">
-                    <div id="imageDropZone" class="border-2 border-dashed border-slate-700 bg-white hover:bg-yellow-50/70 rounded-xl p-3 text-center cursor-pointer transition-all shadow-[2px_2px_0px_#0f172a] relative">
+                    <div id="imageDropZone" class="border-2 border-dashed border-slate-700 bg-white hover:bg-yellow-50/70 rounded-xl p-3.5 text-center cursor-pointer transition-all shadow-[2px_2px_0px_#0f172a] relative">
                         <input type="file" id="imageFileInput" accept="image/*" class="hidden">
                         
                         <!-- Estado Inicial: Prompt de Carga / Pegado -->
-                        <div id="dropZonePrompt" class="flex flex-col sm:flex-row items-center justify-center gap-2 text-xs font-bold text-slate-700 py-1">
-                            <span class="text-xl">📸</span>
-                            <span><strong>¿Tenés una captura del comentario?</strong> Hacé clic para subirla, arrastrala o pegala directo con <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-400 rounded text-[11px] font-mono text-slate-900 shadow-sm">Ctrl + V</kbd></span>
+                        <div id="dropZonePrompt" class="flex flex-col sm:flex-row items-center justify-center gap-2 text-xs font-bold text-slate-700 py-1.5">
+                            <span class="text-2xl">📸</span>
+                            <span><strong>¿Tenés captura del comentario?</strong> Hacé clic acá, arrastrala o pegala directo con <kbd class="px-2 py-0.5 bg-yellow-100 border-2 border-slate-900 rounded text-[11px] font-mono text-slate-900 shadow-sm font-bold">Ctrl + V</kbd></span>
                         </div>
 
                         <!-- Estado Activo: Preview y Barra de Progreso OCR -->
@@ -228,7 +204,36 @@
 
                 <!-- Textarea -->
                 <div class="relative">
-                    <textarea id="commentInput" rows="3" class="w-full bg-slate-50 border-3 border-slate-900 rounded-xl p-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white text-sm sm:text-base font-medium shadow-[3px_3px_0px_#0f172a]" placeholder="Pegá acá el texto del comentario o pegá una imagen con Ctrl + V para leerla automáticamente..."></textarea>
+                    <textarea id="commentInput" rows="3" class="w-full bg-slate-50 border-3 border-slate-900 rounded-xl p-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white text-sm sm:text-base font-medium shadow-[3px_3px_0px_#0f172a]" placeholder="Pegá acá el texto del comentario o pegá una captura con Ctrl + V para leerla..."></textarea>
+                </div>
+
+                <!-- Acciones Rápidas: Ruleta y Ejemplos Opcionales -->
+                <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <button type="button" id="haterRouletteBtn" class="retro-btn bg-amber-100 hover:bg-yellow-200 text-slate-900 px-3 py-1.5 rounded-lg font-pixel text-[9px] flex items-center space-x-1.5 shadow-[2px_2px_0px_#0f172a]">
+                        <span>🎲</span>
+                        <span>RULETA DE HATERS (CASO AL AZAR)</span>
+                    </button>
+
+                    <details class="text-xs text-slate-500 font-semibold cursor-pointer">
+                        <summary class="hover:text-slate-900 transition-colors">Ver ejemplos clásicos ▾</summary>
+                        <div class="flex flex-wrap gap-1.5 mt-2 p-2 bg-slate-50 rounded-lg border border-slate-300">
+                            <button class="preset-chip retro-box-sm text-[11px] font-semibold px-2.5 py-1 hover:bg-yellow-200 transition-colors" data-comment="Falsa humildad 🙄">
+                                "Falsa humildad 🙄"
+                            </button>
+                            <button class="preset-chip retro-box-sm text-[11px] font-semibold px-2.5 py-1 hover:bg-yellow-200 transition-colors" data-comment="Vivís de los demás, andá a laburar de verdad">
+                                "Vivís de los demás, andá a laburar"
+                            </button>
+                            <button class="preset-chip retro-box-sm text-[11px] font-semibold px-2.5 py-1 hover:bg-yellow-200 transition-colors" data-comment="Sos re cheta e infumable, mostrás todo armado">
+                                "Sos re cheta e infumable"
+                            </button>
+                            <button class="preset-chip retro-box-sm text-[11px] font-semibold px-2.5 py-1 hover:bg-yellow-200 transition-colors" data-comment="Sin ofender pero antes eras más humilde">
+                                "Antes eras más humilde"
+                            </button>
+                            <button class="preset-chip retro-box-sm bg-emerald-50 border-emerald-800 text-[11px] font-semibold px-2.5 py-1 hover:bg-emerald-200 transition-colors" data-comment="¡Te amo Jennia sos una genia total, y Corchito Canelón es lo más tierno! ❤️">
+                                "¡Te amo Jennia y Corchito! ❤️"
+                            </button>
+                        </div>
+                    </details>
                 </div>
 
                 <!-- Botón de Análisis -->
@@ -301,8 +306,24 @@
                         </p>
                     </div>
 
+                    <!-- 🔥 Respuestas Épicas Antirafas Sugeridas (Para contestarle con humor) -->
+                    <div id="antirafaResponsesContainer" class="mt-4 bg-yellow-50/70 border-2 border-slate-900 rounded-xl p-4 shadow-[2px_2px_0px_#0f172a]">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <span class="text-lg">🔥</span>
+                            <h4 class="font-pixel text-[10px] sm:text-xs text-slate-900">
+                                RESPUESTAS ANTIRAFAS PARA CONTESTARLE:
+                            </h4>
+                        </div>
+                        <div id="antirafaResponsesList" class="space-y-2">
+                            <!-- Se generan dinámicamente con Rafometro.renderAntirafaResponses -->
+                        </div>
+                    </div>
+
                     <!-- Botones de Acción -->
                     <div class="mt-5 flex flex-wrap gap-2.5">
+                        <button id="shareScouterCardBtn" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-amber-400 hover:brightness-110 text-white font-pixel text-[11px] retro-btn flex items-center justify-center space-x-2 shadow-[3px_3px_0px_#0f172a]">
+                            <span>📸 COMPARTIR TARJETA EN STORIES</span>
+                        </button>
                         <button id="revertCommentBtn" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-pixel text-[11px] retro-btn flex items-center justify-center space-x-2">
                             <span>✨ Revertir Comentario</span>
                         </button>
@@ -311,7 +332,7 @@
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                             </svg>
-                            <span>Copiar para Stories</span>
+                            <span>Copiar Diagnóstico</span>
                         </button>
                     </div>
 
@@ -427,6 +448,11 @@
                             <p id="saveScoreSuccess" class="hidden text-xs font-bold text-emerald-700 mt-1.5">¡Añadido al Ranking de Líderes! 🏆</p>
                         </div>
 
+                        <!-- Botón para Compartir Récord en Redes -->
+                        <button id="shareArcadeCardBtn" class="w-full max-w-xs retro-btn bg-gradient-to-r from-purple-500 via-pink-500 to-amber-400 hover:brightness-110 text-white font-pixel text-[10px] px-4 py-2.5 rounded-xl mb-3 flex items-center justify-center space-x-2 shadow-[2px_2px_0px_#0f172a]">
+                            <span>📸 COMPARTIR RÉCORD EN STORIES</span>
+                        </button>
+
                         <button id="playAgainBtn" class="retro-btn bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-pixel text-[11px] px-6 py-3 rounded-xl">
                             🔄 JUGAR OTRA VEZ
                         </button>
@@ -458,6 +484,21 @@
                                 <!-- Generado dinámicamente por JS -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- 🎖️ Salón de Logros y Trofeos Antirafas -->
+                <div id="achievementsSection" class="mt-8 border-t-2 border-slate-900 pt-5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xl">🎖️</span>
+                            <h3 class="font-pixel text-xs sm:text-sm text-slate-900">SALÓN DE LOGROS ANTIRAFAS</h3>
+                        </div>
+                        <span id="achievementsProgressBadge" class="font-pixel text-[9px] bg-yellow-200 border-2 border-slate-900 px-2 py-0.5 rounded shadow-sm">0 / 6 DESBLOQUEADOS</span>
+                    </div>
+
+                    <div id="achievementsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        <!-- Generado dinámicamente por minigame.js -->
                     </div>
                 </div>
             </div>
@@ -526,8 +567,11 @@
                         <button id="restartQuizBtn" class="retro-btn bg-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase">
                             🔄 Repetir Test
                         </button>
+                        <button id="shareQuizCardBtn" class="retro-btn bg-gradient-to-r from-purple-500 via-pink-500 to-amber-400 hover:brightness-110 text-white px-5 py-2.5 rounded-xl font-pixel text-[10px] uppercase flex items-center space-x-1.5 shadow-[2px_2px_0px_#0f172a]">
+                            <span>📸 Compartir Tarjeta</span>
+                        </button>
                         <button id="shareQuizBtn" class="retro-btn bg-yellow-400 hover:bg-yellow-300 px-5 py-2.5 rounded-xl font-pixel text-[10px] uppercase">
-                            📋 Compartir
+                            📋 Copiar Texto
                         </button>
                     </div>
                 </div>
@@ -648,8 +692,54 @@
         </div>
     </footer>
 
+    <!-- Modal para Compartir Tarjetas en Instagram Stories / WhatsApp -->
+    <div id="shareModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div id="shareModalBackdrop" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm"></div>
+
+        <!-- Modal Content -->
+        <div class="relative bg-white border-4 border-slate-900 rounded-2xl shadow-[8px_8px_0px_#0f172a] max-w-lg w-full max-h-[95vh] overflow-y-auto p-5 sm:p-6 z-10 flex flex-col items-center">
+            <!-- Header Modal -->
+            <div class="w-full flex items-center justify-between border-b-2 border-slate-900 pb-3 mb-4">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">📸</span>
+                    <h3 class="font-pixel text-xs sm:text-sm text-slate-900">TARJETA PARA STORIES & RRSS</h3>
+                </div>
+                <button type="button" id="closeShareModalBtn" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-red-100 hover:text-red-600 border-2 border-slate-900 font-pixel text-xs flex items-center justify-center" title="Cerrar">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Preview Imagen Canvas -->
+            <div class="w-full flex justify-center mb-4 bg-slate-100 p-2 rounded-xl border-2 border-dashed border-slate-400">
+                <img id="shareCardPreview" src="" alt="Tarjeta para compartir" class="max-w-full rounded-lg">
+            </div>
+
+            <!-- Acciones -->
+            <div class="w-full space-y-2.5">
+                <button id="nativeShareBtn" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-amber-400 hover:brightness-110 text-white font-pixel text-[11px] retro-btn flex items-center justify-center space-x-2">
+                    <span>📲 COMPARTIR EN INSTAGRAM / WHATSAPP</span>
+                </button>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button id="downloadCardBtn" class="py-2.5 px-3 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-pixel text-[10px] retro-btn flex items-center justify-center space-x-1.5">
+                        <span>📥 DESCARGAR IMAGEN</span>
+                    </button>
+                    <button id="copyShareTextBtn" class="py-2.5 px-3 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs retro-btn flex items-center justify-center space-x-1.5">
+                        <span>📋 COPIAR EPÍGRAFE</span>
+                    </button>
+                </div>
+            </div>
+
+            <p class="text-[10px] text-slate-400 text-center font-medium mt-3">
+                Tip: Guardá la imagen o compartila en tus historias etiquetando a <strong>@soyjennia</strong> 🐾
+            </p>
+        </div>
+    </div>
+
     <!-- Scripts Modulares -->
     <script src="js/audio.js"></script>
+    <script src="js/share.js"></script>
     <script src="js/rafometro.js"></script>
     <script src="js/test.js"></script>
     <script src="js/minigame.js"></script>

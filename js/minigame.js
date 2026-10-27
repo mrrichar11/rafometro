@@ -30,11 +30,16 @@ class RayoAntirafadorGame {
         this.leaderboardList = document.getElementById('leaderboardList');
         this.resetRankingBtn = document.getElementById('resetRankingBtn');
         this.rankingStatusBadge = document.getElementById('rankingStatusBadge');
+        this.shareArcadeCardBtn = document.getElementById('shareArcadeCardBtn');
+        this.achievementsGrid = document.getElementById('achievementsGrid');
+        this.achievementsProgressBadge = document.getElementById('achievementsProgressBadge');
 
         this.isPlaying = false;
         this.score = 0;
         this.revertedCount = 0;
         this.combo = 1;
+        this.maxCombo = 1;
+        this.puppyHits = 0;
         this.timeLeft = 35;
         this.gameInterval = null;
         this.lastSpawnTime = 0;
@@ -73,6 +78,9 @@ class RayoAntirafadorGame {
         this.loadLeaderboard();
         this.renderLeaderboard();
 
+        // Inicializar y renderizar logros
+        this.initAchievements();
+
         this.init();
     }
 
@@ -104,6 +112,16 @@ class RayoAntirafadorGame {
             this.playerNameInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     this.handleSavePlayerScore();
+                }
+            });
+        }
+
+        // Botón Compartir Récord en Stories
+        if (this.shareArcadeCardBtn) {
+            this.shareArcadeCardBtn.addEventListener('click', () => {
+                if (window.storyCardGenerator) {
+                    const name = (this.playerNameInput && this.playerNameInput.value.trim()) || 'CONVERTIDOR';
+                    window.storyCardGenerator.generateArcadeCard(this.score, this.revertedCount, name);
                 }
             });
         }
@@ -344,6 +362,8 @@ class RayoAntirafadorGame {
         this.score = 0;
         this.revertedCount = 0;
         this.combo = 1;
+        this.maxCombo = 1;
+        this.puppyHits = 0;
         this.timeLeft = 35;
         this.targets = [];
         this.particles = [];
@@ -399,6 +419,32 @@ class RayoAntirafadorGame {
         if (this.playerNameInput) {
             this.playerNameInput.focus();
         }
+
+        // Evaluar Logros del Jugador
+        if (this.puppyHits === 0 && this.score >= 500) {
+            this.unlockAchievement('amigo_corchito');
+        }
+        if (this.revertedCount >= 15) {
+            this.unlockAchievement('purificador_serial');
+        }
+        if (this.maxCombo >= 5) {
+            this.unlockAchievement('combo_maestro');
+        }
+        if (this.score >= 2500) {
+            this.unlockAchievement('ki_legendario');
+        }
+
+        let gamesPlayed = parseInt(localStorage.getItem('rafometro_games_played') || '0', 10) + 1;
+        localStorage.setItem('rafometro_games_played', gamesPlayed);
+        if (gamesPlayed >= 3) {
+            this.unlockAchievement('guardian_jenny');
+        }
+
+        if (localStorage.getItem('rafometro_ach_cazador_haters') === 'true') {
+            this.unlockAchievement('cazador_haters');
+        }
+
+        this.renderAchievements();
 
         if (window.soundSystem) {
             window.soundSystem.playFanfare();
@@ -540,6 +586,7 @@ class RayoAntirafadorGame {
             window.soundSystem.playDogWhimper();
         }
 
+        this.puppyHits++;
         this.shakeTimer = 18;
         const penalty = 200;
         this.score = Math.max(0, this.score - penalty);
@@ -586,6 +633,9 @@ class RayoAntirafadorGame {
 
         if (!isSpecial) {
             this.combo = Math.min(this.combo + 1, 8);
+            if (this.combo > this.maxCombo) {
+                this.maxCombo = this.combo;
+            }
         }
 
         this.updateStatsUI();
@@ -830,42 +880,144 @@ class RayoAntirafadorGame {
         this.ctx.restore();
     }
 
-    draw8BitDachshund(cx, cy, radius) {
-        const pSize = 3;
-        const startX = cx - 24;
-        const startY = cy - 14;
-
-        const dachshundMap = [
-            [0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0,1,1,3,1,1,0],
-            [0,0,0,0,0,0,0,0,0,0,1,1,1,1,2,3,0],
-            [1,0,0,0,0,0,0,0,0,0,1,1,1,2,2,0,0],
-            [0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0],
-            [0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
-            [0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
-            [0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
-            [0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0]
-        ];
-
-        const colors = {
-            1: '#3e2723',
-            2: '#8d6e63',
-            3: '#0f172a'
+    // ==========================================
+    // SALÓN DE LOGROS Y TROFEOS ANTIRAFAS
+    // ==========================================
+    getAchievementsData() {
+        return {
+            amigo_corchito: {
+                id: 'amigo_corchito',
+                icon: '🐶',
+                title: 'Amigo de Corchito',
+                desc: 'Completá una partida con más de 500 pts sin tocar a ningún perrito salchicha.'
+            },
+            purificador_serial: {
+                id: 'purificador_serial',
+                icon: '⚡',
+                title: 'Purificador Serial',
+                desc: 'Revertí 15 o más Rafas en una sola partida del Arcade.'
+            },
+            combo_maestro: {
+                id: 'combo_maestro',
+                icon: '💥',
+                title: 'Combo Maestro',
+                desc: 'Alcanzá una racha de Combo x5 o superior disparando sin fallar.'
+            },
+            ki_legendario: {
+                id: 'ki_legendario',
+                icon: '🔥',
+                title: 'Ki Legendario',
+                desc: 'Superá los 2,500 puntos en el Arcade Antirafador.'
+            },
+            guardian_jenny: {
+                id: 'guardian_jenny',
+                icon: '🛡️',
+                title: 'Guardián de Jenny',
+                desc: 'Jugá al menos 3 partidas en el Arcade para defender el feed.'
+            },
+            cazador_haters: {
+                id: 'cazador_haters',
+                icon: '🔬',
+                title: 'Cazador de Haters',
+                desc: 'Escaneá un comentario o captura en El Rafómetro.'
+            }
         };
+    }
 
-        for (let r = 0; r < dachshundMap.length; r++) {
-            for (let c = 0; c < dachshundMap[r].length; c++) {
-                const val = dachshundMap[r][c];
-                if (val !== 0) {
-                    this.ctx.fillStyle = colors[val];
-                    this.ctx.fillRect(startX + c * pSize, startY + r * pSize, pSize, pSize);
+    initAchievements() {
+        if (!localStorage.getItem('rafometro_achievements')) {
+            localStorage.setItem('rafometro_achievements', JSON.stringify([]));
+        }
+        // Verificar si cazador_haters ya estaba guardado
+        if (localStorage.getItem('rafometro_ach_cazador_haters') === 'true') {
+            this.unlockAchievement('cazador_haters', false);
+        }
+        this.renderAchievements();
+    }
+
+    getUnlockedAchievements() {
+        try {
+            return JSON.parse(localStorage.getItem('rafometro_achievements') || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    unlockAchievement(id, notify = true) {
+        const unlocked = this.getUnlockedAchievements();
+        if (!unlocked.includes(id)) {
+            unlocked.push(id);
+            localStorage.setItem('rafometro_achievements', JSON.stringify(unlocked));
+
+            const achData = this.getAchievementsData()[id];
+            if (achData && notify) {
+                if (window.soundSystem) window.soundSystem.playFanfare();
+                if (this.floatingTexts) {
+                    this.floatingTexts.push({
+                        x: this.canvas.width / 2,
+                        y: this.canvas.height / 2 - 40,
+                        text: `🏆 ¡LOGRO DESBLOQUEADO: ${achData.title}!`,
+                        alpha: 1,
+                        vy: -1.5,
+                        color: '#facc15'
+                    });
                 }
             }
+            this.renderAchievements();
+        }
+    }
+
+    renderAchievements() {
+        if (!this.achievementsGrid) return;
+
+        const all = this.getAchievementsData();
+        const unlocked = this.getUnlockedAchievements();
+        const total = Object.keys(all).length;
+
+        if (this.achievementsProgressBadge) {
+            this.achievementsProgressBadge.textContent = `${unlocked.length} / ${total} DESBLOQUEADOS`;
         }
 
-        this.ctx.strokeStyle = '#22c55e';
-        this.ctx.lineWidth = 1.5;
-        this.ctx.strokeRect(startX - 2, startY - 2, dachshundMap[0].length * pSize + 4, dachshundMap.length * pSize + 4);
+        this.achievementsGrid.innerHTML = '';
+
+        Object.values(all).forEach(ach => {
+            const isUnlocked = unlocked.includes(ach.id);
+            const card = document.createElement('div');
+            card.className = `achievement-card border-2 border-slate-900 rounded-xl p-3 flex flex-col justify-between shadow-[2px_2px_0px_#0f172a] ${isUnlocked ? 'achievement-unlocked bg-white' : 'achievement-locked bg-slate-100'}`;
+
+            card.innerHTML = `
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-2xl">${ach.icon}</span>
+                        <span class="font-pixel text-[8px] px-2 py-0.5 rounded border border-slate-900 ${isUnlocked ? 'bg-emerald-300 text-slate-900 font-bold' : 'bg-slate-200 text-slate-600'}">
+                            ${isUnlocked ? '✓ DESBLOQUEADO' : '🔒 BLOQUEADO'}
+                        </span>
+                    </div>
+                    <h4 class="font-pixel text-[10px] text-slate-900 mb-1">${ach.title}</h4>
+                    <p class="text-xs text-slate-600 leading-tight">${ach.desc}</p>
+                </div>
+                ${isUnlocked ? `
+                <div class="mt-3 pt-2 border-t border-slate-200">
+                    <button type="button" class="share-achievement-btn w-full retro-btn bg-gradient-to-r from-purple-500 via-pink-500 to-amber-400 hover:brightness-110 text-white font-pixel text-[8px] py-1.5 rounded-lg flex items-center justify-center space-x-1 shadow-[1px_1px_0px_#0f172a]">
+                        <span>📸 COMPARTIR TROFEO</span>
+                    </button>
+                </div>
+                ` : ''}
+            `;
+
+            if (isUnlocked) {
+                const btn = card.querySelector('.share-achievement-btn');
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        if (window.storyCardGenerator) {
+                            window.storyCardGenerator.generateAchievementCard(ach);
+                        }
+                    });
+                }
+            }
+
+            this.achievementsGrid.appendChild(card);
+        });
     }
 }
 
