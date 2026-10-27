@@ -346,8 +346,10 @@ class RayoAntirafadorGame {
         const container = this.canvas.parentElement;
         if (!container) return;
         const rect = container.getBoundingClientRect();
-        this.canvas.width = rect.width;
+        const w = rect.width > 50 ? rect.width : (container.clientWidth > 50 ? container.clientWidth : 750);
+        this.canvas.width = w;
         this.canvas.height = Math.min(window.innerHeight * 0.55, 450);
+        if (this.canvas.height < 320) this.canvas.height = 360;
     }
 
     updateHighScoreDisplay() {
@@ -357,6 +359,7 @@ class RayoAntirafadorGame {
     }
 
     startGame() {
+        this.resizeCanvas();
         if (window.soundSystem) window.soundSystem.playClick();
 
         this.score = 0;
@@ -372,6 +375,7 @@ class RayoAntirafadorGame {
         this.corchitoCharged = true;
         this.scoreAlreadySaved = false;
         this.isPlaying = true;
+        this.lastSpawnTime = performance.now();
 
         if (this.startBtn) this.startBtn.classList.add('hidden');
         if (this.gameOverOverlay) this.gameOverOverlay.classList.add('hidden');
@@ -384,6 +388,10 @@ class RayoAntirafadorGame {
 
         this.updateCorchitoBtnUI();
         this.updateStatsUI();
+
+        // Spawn inicial de objetivos para que la pantalla nunca esté vacía
+        this.spawnTarget();
+        this.spawnTarget();
 
         if (this.gameInterval) clearInterval(this.gameInterval);
         this.gameInterval = setInterval(() => {
@@ -502,8 +510,10 @@ class RayoAntirafadorGame {
         const isPuppy = Math.random() < 0.28;
         const size = isPuppy ? 36 : 38;
         const margin = size + 20;
-        const x = margin + Math.random() * (this.canvas.width - margin * 2);
-        const y = margin + Math.random() * (this.canvas.height - margin * 2);
+        const availableW = Math.max(this.canvas.width - margin * 2, 120);
+        const availableH = Math.max(this.canvas.height - margin * 2, 120);
+        const x = margin + Math.random() * availableW;
+        const y = margin + Math.random() * availableH;
 
         if (isPuppy) {
             this.targets.push({
@@ -709,9 +719,10 @@ class RayoAntirafadorGame {
         }
 
         if (this.isPlaying) {
-            if (timestamp - this.lastSpawnTime > this.spawnRate && this.targets.length < 9) {
+            const currentT = timestamp || performance.now();
+            if (currentT - this.lastSpawnTime > this.spawnRate && this.targets.length < 9) {
                 this.spawnTarget();
-                this.lastSpawnTime = timestamp;
+                this.lastSpawnTime = currentT;
             }
         }
 
@@ -816,68 +827,111 @@ class RayoAntirafadorGame {
     }
 
     drawTarget(target) {
-        this.ctx.save();
-        this.ctx.globalAlpha = target.alpha;
+        try {
+            this.ctx.save();
+            this.ctx.globalAlpha = target.alpha;
 
-        if (target.type === 'puppy') {
-            this.draw8BitDachshund(target.x, target.y, target.size);
+            if (target.type === 'puppy') {
+                this.draw8BitDachshund(target.x, target.y, target.size);
 
-            this.ctx.font = "bold 8px 'Press Start 2P', monospace";
-            const textW = this.ctx.measureText(target.phrase).width;
-            const bW = textW + 10;
-            const bH = 16;
-            const bX = target.x - bW / 2;
-            const bY = target.y + target.size * 0.7;
+                this.ctx.font = "bold 8px 'Press Start 2P', monospace";
+                const textW = this.ctx.measureText(target.phrase).width;
+                const bW = textW + 10;
+                const bH = 16;
+                const bX = target.x - bW / 2;
+                const bY = target.y + target.size * 0.7;
 
-            this.ctx.fillStyle = '#fef08a';
-            this.ctx.fillRect(bX, bY, bW, bH);
-            this.ctx.strokeStyle = '#0f172a';
-            this.ctx.lineWidth = 1.5;
-            this.ctx.strokeRect(bX, bY, bW, bH);
+                this.ctx.fillStyle = '#fef08a';
+                this.ctx.fillRect(bX, bY, bW, bH);
+                this.ctx.strokeStyle = '#0f172a';
+                this.ctx.lineWidth = 1.5;
+                this.ctx.strokeRect(bX, bY, bW, bH);
 
-            this.ctx.fillStyle = '#b45309';
-            this.ctx.fillText(target.phrase, bX + 5, bY + 11);
+                this.ctx.fillStyle = '#b45309';
+                this.ctx.fillText(target.phrase, bX + 5, bY + 11);
 
-        } else if (target.type === 'rafa') {
-            const isReverted = target.state === 'reverted';
-            const img = isReverted ? this.imgRafaBueno : this.imgRafaMalo;
-            const drawSize = target.size * 2;
+            } else if (target.type === 'rafa') {
+                const isReverted = target.state === 'reverted';
+                const img = isReverted ? this.imgRafaBueno : this.imgRafaMalo;
+                const drawSize = target.size * 2;
 
-            if (img.complete && img.naturalWidth > 0) {
-                this.ctx.drawImage(img, target.x - target.size, target.y - target.size, drawSize, drawSize);
-            } else {
-                this.ctx.beginPath();
-                this.ctx.arc(target.x, target.y, target.size * 0.8, 0, Math.PI * 2);
-                this.ctx.fillStyle = isReverted ? '#facc15' : '#ef4444';
-                this.ctx.fill();
+                if (img.complete && img.naturalWidth > 0) {
+                    this.ctx.drawImage(img, target.x - target.size, target.y - target.size, drawSize, drawSize);
+                } else {
+                    this.ctx.beginPath();
+                    this.ctx.arc(target.x, target.y, target.size * 0.8, 0, Math.PI * 2);
+                    this.ctx.fillStyle = isReverted ? '#facc15' : '#ef4444';
+                    this.ctx.fill();
+                }
+
+                if (isReverted) {
+                    this.ctx.beginPath();
+                    this.ctx.ellipse(target.x, target.y - target.size - 6, target.size * 0.7, 5, 0, 0, Math.PI * 2);
+                    this.ctx.strokeStyle = '#eab308';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.stroke();
+                }
+
+                this.ctx.font = "bold 9px 'Press Start 2P', monospace";
+                const textW = this.ctx.measureText(target.phrase).width;
+                const bW = textW + 10;
+                const bH = 16;
+                const bX = target.x - bW / 2;
+                const bY = target.y + target.size + 4;
+
+                this.ctx.fillStyle = isReverted ? '#dcfce7' : '#fee2e2';
+                this.ctx.fillRect(bX, bY, bW, bH);
+                this.ctx.strokeStyle = '#0f172a';
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeRect(bX, bY, bW, bH);
+
+                this.ctx.fillStyle = isReverted ? '#166534' : '#991b1b';
+                this.ctx.fillText(target.phrase, bX + 5, bY + 11);
             }
 
-            if (isReverted) {
-                this.ctx.beginPath();
-                this.ctx.ellipse(target.x, target.y - target.size - 6, target.size * 0.7, 5, 0, 0, Math.PI * 2);
-                this.ctx.strokeStyle = '#eab308';
-                this.ctx.lineWidth = 3;
-                this.ctx.stroke();
+            this.ctx.restore();
+        } catch (err) {
+            console.error('Error drawing target:', err);
+            try { this.ctx.restore(); } catch (e) {}
+        }
+    }
+
+    draw8BitDachshund(cx, cy, radius) {
+        const pSize = 3;
+        const startX = cx - 24;
+        const startY = cy - 14;
+
+        const dachshundMap = [
+            [0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,1,1,3,1,1,0],
+            [0,0,0,0,0,0,0,0,0,0,1,1,1,1,2,3,0],
+            [1,0,0,0,0,0,0,0,0,0,1,1,1,2,2,0,0],
+            [0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0],
+            [0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+            [0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+            [0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
+            [0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0]
+        ];
+
+        const colors = {
+            1: '#3e2723',
+            2: '#8d6e63',
+            3: '#0f172a'
+        };
+
+        for (let r = 0; r < dachshundMap.length; r++) {
+            for (let c = 0; c < dachshundMap[r].length; c++) {
+                const val = dachshundMap[r][c];
+                if (val !== 0) {
+                    this.ctx.fillStyle = colors[val];
+                    this.ctx.fillRect(startX + c * pSize, startY + r * pSize, pSize, pSize);
+                }
             }
-
-            this.ctx.font = "bold 9px 'Press Start 2P', monospace";
-            const textW = this.ctx.measureText(target.phrase).width;
-            const bW = textW + 10;
-            const bH = 16;
-            const bX = target.x - bW / 2;
-            const bY = target.y + target.size + 4;
-
-            this.ctx.fillStyle = isReverted ? '#dcfce7' : '#fee2e2';
-            this.ctx.fillRect(bX, bY, bW, bH);
-            this.ctx.strokeStyle = '#0f172a';
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(bX, bY, bW, bH);
-
-            this.ctx.fillStyle = isReverted ? '#166534' : '#991b1b';
-            this.ctx.fillText(target.phrase, bX + 5, bY + 11);
         }
 
-        this.ctx.restore();
+        this.ctx.strokeStyle = '#22c55e';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.strokeRect(startX - 2, startY - 2, dachshundMap[0].length * pSize + 4, dachshundMap.length * pSize + 4);
     }
 
     // ==========================================
