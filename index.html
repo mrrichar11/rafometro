@@ -494,7 +494,12 @@
                             <span class="text-xl">🎖️</span>
                             <h3 class="font-pixel text-xs sm:text-sm text-slate-900">SALÓN DE LOGROS ANTIRAFAS</h3>
                         </div>
-                        <span id="achievementsProgressBadge" class="font-pixel text-[9px] bg-yellow-200 border-2 border-slate-900 px-2 py-0.5 rounded shadow-sm">0 / 6 DESBLOQUEADOS</span>
+                        <div class="flex items-center space-x-2">
+                            <button type="button" id="resetAchievementsBtn" class="text-[9px] font-pixel text-slate-400 hover:text-red-500 underline transition-colors cursor-pointer" title="Reiniciar progreso de trofeos para volver a desbloquearlos">
+                                REINICIAR
+                            </button>
+                            <span id="achievementsProgressBadge" class="font-pixel text-[9px] bg-yellow-200 border-2 border-slate-900 px-2 py-0.5 rounded shadow-sm">0 / 6 DESBLOQUEADOS</span>
+                        </div>
                     </div>
 
                     <div id="achievementsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">

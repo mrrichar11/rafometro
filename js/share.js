@@ -437,6 +437,9 @@ class StoryCardGenerator {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
 
+        // Reset inicial de alineación
+        ctx.textAlign = 'left';
+
         ctx.fillStyle = '#f8fafc';
         ctx.fillRect(0, 0, width, height);
 
@@ -465,17 +468,19 @@ class StoryCardGenerator {
         ctx.lineWidth = 8;
         ctx.strokeRect(80, 250, width - 160, 550);
 
-        ctx.font = "120px sans-serif";
+        // Icono y Título centrados
         ctx.textAlign = 'center';
+        ctx.font = "120px sans-serif";
         ctx.fillText(ach.icon || "🏆", width / 2, 420);
 
         ctx.fillStyle = '#0f172a';
         ctx.font = "900 52px 'Montserrat', sans-serif";
         ctx.fillText(ach.title.toUpperCase(), width / 2, 530);
 
+        // Descripción perfectamente centrada
         ctx.fillStyle = '#64748b';
         ctx.font = "600 30px 'Montserrat', sans-serif";
-        this.wrapText(ctx, ach.desc, width / 2 - 400, 610, 800, 42);
+        this.wrapText(ctx, ach.desc, width / 2, 610, 800, 44);
 
         // Certificación de Corchito
         ctx.fillStyle = '#fef3c7';
@@ -507,6 +512,7 @@ class StoryCardGenerator {
         ctx.font = "600 24px 'Montserrat', sans-serif";
         this.wrapText(ctx, "Este usuario demostró su lealtad a la comunidad y su compromiso absoluto con la buena onda.", 360, 1015, width - 480, 36);
 
+        // Pie de página
         ctx.fillStyle = '#64748b';
         ctx.font = "bold 24px 'Montserrat', sans-serif";
         ctx.textAlign = 'center';
@@ -524,23 +530,31 @@ class StoryCardGenerator {
     }
 
     wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-        const words = text.split(' ');
-        let line = '';
+        if (!text) return;
+        const paragraphs = text.split('\n');
         let currentY = y;
 
-        for (let n = 0; n < words.length; n++) {
-            const testLine = line + words[n] + ' ';
-            const metrics = ctx.measureText(testLine);
-            const testWidth = metrics.width;
-            if (testWidth > maxWidth && n > 0) {
-                ctx.fillText(line, x, currentY);
-                line = words[n] + ' ';
-                currentY += lineHeight;
-            } else {
-                line = testLine;
+        paragraphs.forEach(paragraph => {
+            const words = paragraph.split(' ');
+            let line = '';
+
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = ctx.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    ctx.fillText(line.trim(), x, currentY);
+                    line = words[n] + ' ';
+                    currentY += lineHeight;
+                } else {
+                    line = testLine;
+                }
             }
-        }
-        ctx.fillText(line, x, currentY);
+            if (line.trim().length > 0) {
+                ctx.fillText(line.trim(), x, currentY);
+                currentY += lineHeight;
+            }
+        });
     }
 }
 

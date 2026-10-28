@@ -347,11 +347,16 @@ class Rafometro {
         // Renderizar sugerencias de respuestas Antirafas
         this.renderAntirafaResponses(comment, metrics);
 
-        // Desbloquear logro en el sistema de trofeos
-        if (window.rayoGame && window.rayoGame.unlockAchievement) {
-            window.rayoGame.unlockAchievement('cazador_haters');
-        } else {
-            localStorage.setItem('rafometro_ach_cazador_haters', 'true');
+        // Contabilizar escaneos para el logro Cazador de Haters (5 escaneos requeridos)
+        const scanCount = parseInt(localStorage.getItem('rafometro_scans_count') || '0', 10) + 1;
+        localStorage.setItem('rafometro_scans_count', scanCount);
+
+        if (scanCount >= 5) {
+            if (window.rayoGame && window.rayoGame.unlockAchievement) {
+                window.rayoGame.unlockAchievement('cazador_haters');
+            } else {
+                localStorage.setItem('rafometro_ach_cazador_haters', 'true');
+            }
         }
 
         // Registrar en el historial privado de Jenny (Cloud)

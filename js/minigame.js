@@ -33,6 +33,7 @@ class RayoAntirafadorGame {
         this.shareArcadeCardBtn = document.getElementById('shareArcadeCardBtn');
         this.achievementsGrid = document.getElementById('achievementsGrid');
         this.achievementsProgressBadge = document.getElementById('achievementsProgressBadge');
+        this.resetAchievementsBtn = document.getElementById('resetAchievementsBtn');
 
         this.isPlaying = false;
         this.score = 0;
@@ -132,6 +133,13 @@ class RayoAntirafadorGame {
                 if (confirm('¿Querés reiniciar la tabla a los campeones iniciales?')) {
                     this.resetLeaderboard();
                 }
+            });
+        }
+
+        // Botón reiniciar logros
+        if (this.resetAchievementsBtn) {
+            this.resetAchievementsBtn.addEventListener('click', () => {
+                this.resetAchievements();
             });
         }
 
@@ -428,27 +436,28 @@ class RayoAntirafadorGame {
             this.playerNameInput.focus();
         }
 
-        // Evaluar Logros del Jugador
-        if (this.puppyHits === 0 && this.score >= 500) {
+        // Evaluar Logros del Jugador (Niveles más desafiantes)
+        if (this.puppyHits === 0 && this.score >= 2500) {
             this.unlockAchievement('amigo_corchito');
         }
-        if (this.revertedCount >= 15) {
+        if (this.revertedCount >= 30) {
             this.unlockAchievement('purificador_serial');
         }
-        if (this.maxCombo >= 5) {
+        if (this.maxCombo >= 15) {
             this.unlockAchievement('combo_maestro');
         }
-        if (this.score >= 2500) {
+        if (this.score >= 6000) {
             this.unlockAchievement('ki_legendario');
         }
 
         let gamesPlayed = parseInt(localStorage.getItem('rafometro_games_played') || '0', 10) + 1;
         localStorage.setItem('rafometro_games_played', gamesPlayed);
-        if (gamesPlayed >= 3) {
+        if (gamesPlayed >= 10) {
             this.unlockAchievement('guardian_jenny');
         }
 
-        if (localStorage.getItem('rafometro_ach_cazador_haters') === 'true') {
+        const scanCount = parseInt(localStorage.getItem('rafometro_scans_count') || '0', 10);
+        if (scanCount >= 5 || localStorage.getItem('rafometro_ach_cazador_haters') === 'true') {
             this.unlockAchievement('cazador_haters');
         }
 
@@ -943,37 +952,37 @@ class RayoAntirafadorGame {
                 id: 'amigo_corchito',
                 icon: '🐶',
                 title: 'Amigo de Corchito',
-                desc: 'Completá una partida con más de 500 pts sin tocar a ningún perrito salchicha.'
+                desc: 'Completá una partida con más de 2,500 pts sin tocar a ningún perrito salchicha.'
             },
             purificador_serial: {
                 id: 'purificador_serial',
                 icon: '⚡',
                 title: 'Purificador Serial',
-                desc: 'Revertí 15 o más Rafas en una sola partida del Arcade.'
+                desc: 'Revertí 30 o más Rafas en una sola partida del Arcade.'
             },
             combo_maestro: {
                 id: 'combo_maestro',
                 icon: '💥',
                 title: 'Combo Maestro',
-                desc: 'Alcanzá una racha de Combo x5 o superior disparando sin fallar.'
+                desc: 'Alcanzá una racha de Combo x15 o superior disparando sin fallar.'
             },
             ki_legendario: {
                 id: 'ki_legendario',
                 icon: '🔥',
                 title: 'Ki Legendario',
-                desc: 'Superá los 2,500 puntos en el Arcade Antirafador.'
+                desc: 'Superá los 6,000 puntos en el Arcade Antirafador.'
             },
             guardian_jenny: {
                 id: 'guardian_jenny',
                 icon: '🛡️',
                 title: 'Guardián de Jenny',
-                desc: 'Jugá al menos 3 partidas en el Arcade para defender el feed.'
+                desc: 'Jugá al menos 10 partidas en el Arcade para defender el feed.'
             },
             cazador_haters: {
                 id: 'cazador_haters',
                 icon: '🔬',
                 title: 'Cazador de Haters',
-                desc: 'Escaneá un comentario o captura en El Rafómetro.'
+                desc: 'Escaneá al menos 5 comentarios o capturas en El Rafómetro.'
             }
         };
     }
@@ -982,11 +991,23 @@ class RayoAntirafadorGame {
         if (!localStorage.getItem('rafometro_achievements')) {
             localStorage.setItem('rafometro_achievements', JSON.stringify([]));
         }
-        // Verificar si cazador_haters ya estaba guardado
-        if (localStorage.getItem('rafometro_ach_cazador_haters') === 'true') {
+        // Verificar si cazador_haters ya cumplió los 5 escaneos
+        const scanCount = parseInt(localStorage.getItem('rafometro_scans_count') || '0', 10);
+        if (scanCount >= 5 || localStorage.getItem('rafometro_ach_cazador_haters') === 'true') {
             this.unlockAchievement('cazador_haters', false);
         }
         this.renderAchievements();
+    }
+
+    resetAchievements() {
+        if (confirm('¿Querés reiniciar todos tus trofeos y logros para volver a ganarlos con los nuevos desafíos?')) {
+            localStorage.setItem('rafometro_achievements', JSON.stringify([]));
+            localStorage.removeItem('rafometro_games_played');
+            localStorage.removeItem('rafometro_scans_count');
+            localStorage.removeItem('rafometro_ach_cazador_haters');
+            this.renderAchievements();
+            if (window.soundSystem) window.soundSystem.playClick();
+        }
     }
 
     getUnlockedAchievements() {
