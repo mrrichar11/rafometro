@@ -375,30 +375,39 @@ class StoryCardGenerator {
         ctx.lineWidth = 8;
         ctx.strokeRect(80, 760, width - 160, 430);
 
+        // Título superior del veredicto con margen completo
+        ctx.fillStyle = '#065f46';
+        ctx.font = "900 34px 'Montserrat', sans-serif";
+        ctx.fillText("¡CORCHITO CANELÓN TE FELICITA! 🐾", 120, 825);
+
+        // Rafabueno a la izquierda
         if (this.assets.rafabueno.complete) {
-            ctx.drawImage(this.assets.rafabueno, 120, 810, 260, 260);
+            ctx.drawImage(this.assets.rafabueno, 120, 860, 190, 190);
         }
+
+        // Corchito Canelón circular al centro
         if (this.assets.corchito.complete) {
             ctx.save();
             ctx.beginPath();
-            ctx.arc(500, 940, 110, 0, Math.PI * 2);
+            ctx.arc(395, 955, 90, 0, Math.PI * 2);
             ctx.clip();
-            ctx.drawImage(this.assets.corchito, 390, 830, 220, 220);
+            ctx.drawImage(this.assets.corchito, 305, 865, 180, 180);
             ctx.restore();
             ctx.strokeStyle = '#0f172a';
             ctx.lineWidth = 6;
             ctx.beginPath();
-            ctx.arc(500, 940, 110, 0, Math.PI * 2);
+            ctx.arc(395, 955, 90, 0, Math.PI * 2);
             ctx.stroke();
         }
 
-        ctx.fillStyle = '#065f46';
-        ctx.font = "900 32px 'Montserrat', sans-serif";
-        ctx.fillText("¡CORCHITO CANELÓN TE FELICITA!", 640, 890);
-
+        // Texto descriptivo a la derecha con margen seguro para no desbordar
         ctx.fillStyle = '#047857';
         ctx.font = "600 24px 'Montserrat', sans-serif";
-        this.wrapText(ctx, "Lograste mantener a salvo a los perritos salchichas y purificaste el feed de Instagram.", 640, 950, 360, 36);
+        this.wrapText(ctx, "Lograste mantener a salvo a los perritos salchichas y purificaste el feed de Instagram con buena onda.", 520, 915, 430, 36);
+
+        ctx.fillStyle = '#065f46';
+        ctx.font = "bold 22px 'Montserrat', sans-serif";
+        ctx.fillText("✨ Mención de Honor Antirafas", 520, 1045);
 
         // Pie de página
         ctx.fillStyle = '#64748b';
@@ -491,8 +500,8 @@ class StoryCardGenerator {
 
         ctx.textAlign = 'left';
         ctx.fillStyle = '#92400e';
-        ctx.font = "900 32px 'Montserrat', sans-serif";
-        ctx.fillText("CERTIFICADO POR CORCHITO CANELÓN 🐾", 360, 960);
+        ctx.font = "900 26px 'Montserrat', sans-serif";
+        this.wrapText(ctx, "CERTIFICADO POR CORCHITO CANELÓN 🐾", 360, 960, width - 460, 34);
 
         ctx.fillStyle = '#0f172a';
         ctx.font = "600 24px 'Montserrat', sans-serif";
